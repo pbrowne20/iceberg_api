@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { track } from '@vercel/analytics'
 
 export default function TransactionsConsole() {
   const [transactionType, setTransactionType] = useState('')
@@ -13,6 +14,12 @@ export default function TransactionsConsole() {
   const [viewMode, setViewMode] = useState<'table' | 'json'>('table')
 
   const handleQuery = async () => {
+    track('Run Query Clicked', {
+    transactionType,
+    year,
+    ticker,
+    propertyType,
+  })
     setLoading(true)
     setError(null)
     setResponse(null)
@@ -37,6 +44,9 @@ export default function TransactionsConsole() {
   }
 
   const downloadCSV = () => {
+    track('Download CSV Clicked', {
+      rowCount: response?.rows?.length || 0,
+    })    
     if (!response || !response.rows?.length) return
     const rows = response.rows
     const header = Object.keys(rows[0]).join(',')
