@@ -10,59 +10,40 @@ export async function GET(request: Request) {
     const transactionYear = searchParams.get('year')
     const submarket = searchParams.get('submarket')
     const propertyType = searchParams.get('property_type')
+    const ticker = searchParams.get('ticker')
 
-    // Build base query with tagged template syntax
-    let query
+    // Start collecting WHERE clauses
+    const whereClauses: any[] = []
 
-    if (transactionType && transactionYear) {
-      query = sql`
-        SELECT *
-        FROM iceberg.fact_transactions
-        WHERE LOWER(transaction_type) = LOWER(${transactionType})
-          AND transaction_year = ${transactionYear}
-        ORDER BY transaction_year DESC, transaction_quarter DESC
-        LIMIT 5000;
-      `
-    } else if (transactionType) {
-      query = sql`
-        SELECT *
-        FROM iceberg.fact_transactions
-        WHERE LOWER(transaction_type) = LOWER(${transactionType})
-        ORDER BY transaction_year DESC, transaction_quarter DESC
-        LIMIT 5000;
-      `
-    } else if (transactionYear) {
-      query = sql`
-        SELECT *
-        FROM iceberg.fact_transactions
-        WHERE transaction_year = ${transactionYear}
-        ORDER BY transaction_year DESC, transaction_quarter DESC
-        LIMIT 5000;
-      `
-    } else if (submarket) {
-      query = sql`
-        SELECT *
-        FROM iceberg.fact_transactions
-        WHERE submarket = ${submarket}
-        ORDER BY transaction_year DESC, transaction_quarter DESC
-        LIMIT 5000;
-      `
-    } else if (propertyType) {
-      query = sql`
-        SELECT *
-        FROM iceberg.fact_transactions
-        WHERE property_type = ${propertyType}
-        ORDER BY transaction_year DESC, transaction_quarter DESC
-        LIMIT 5000;
-      `
-    } else {
-      query = sql`
-        SELECT *
-        FROM iceberg.fact_transactions
-        ORDER BY transaction_year DESC, transaction_quarter DESC
-        LIMIT 5000;
-      `
-    }
+    if (transactionType)
+      whereClauses.push(sql`LOWER(TRIM(transaction_type)) = LOWER(TRIM(${transactionType}))`)
+    if (transactionYear)
+      whereClauses.push(sql`transaction_year = ${transactionYear}`)
+    if (submarket)
+      whereClauses.push(sql`LOWER(TRIM(submarket)) = LOWER(TRIM(${submarket}))`)
+    if (propertyType && propertyType !== 'ALL')
+      whereClauses.push(sql`LOWER(TRIM(property_type)) = LOWER(TRIM(${propertyType}))`)
+    if (ticker && ticker !== 'ALL')
+      whereClauses.push(sql`LOWER(TRIM(ticker)) = LOWER(TRIM(${ticker}))`)
+
+    let whereSQL = sql`TRUE`
+if (whereClauses.length > 0) {
+  // manually join clauses with AND
+  const combined = whereClauses.reduce(
+    (acc, clause, idx) =>
+      idx === 0 ? sql`${clause}` : sql`${acc} AND ${clause}`,
+    sql``
+  )
+  whereSQL = combined
+}
+
+const query = sql`
+  SELECT *
+  FROM iceberg.fact_transactions
+  WHERE ${whereSQL}
+  ORDER BY transaction_year DESC, transaction_quarter DESC
+  LIMIT 5000;
+`
 
     const rows = await query
 
@@ -73,6 +54,9 @@ export async function GET(request: Request) {
     })
   } catch (error: any) {
     console.error('❌ API Error:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    )
   }
 }
