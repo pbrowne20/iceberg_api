@@ -21,7 +21,7 @@ export async function GET(request: Request) {
         WHERE LOWER(transaction_type) = LOWER(${transactionType})
           AND transaction_year = ${transactionYear}
         ORDER BY transaction_year DESC, transaction_quarter DESC
-        LIMIT 100;
+        LIMIT 5000;
       `
     } else if (transactionType) {
       query = sql`
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
         FROM iceberg.fact_transactions
         WHERE LOWER(transaction_type) = LOWER(${transactionType})
         ORDER BY transaction_year DESC, transaction_quarter DESC
-        LIMIT 100;
+        LIMIT 5000;
       `
     } else if (transactionYear) {
       query = sql`
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
         FROM iceberg.fact_transactions
         WHERE transaction_year = ${transactionYear}
         ORDER BY transaction_year DESC, transaction_quarter DESC
-        LIMIT 100;
+        LIMIT 5000;
       `
     } else if (submarket) {
       query = sql`
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
         FROM iceberg.fact_transactions
         WHERE submarket = ${submarket}
         ORDER BY transaction_year DESC, transaction_quarter DESC
-        LIMIT 100;
+        LIMIT 5000;
       `
     } else if (propertyType) {
       query = sql`
@@ -53,14 +53,14 @@ export async function GET(request: Request) {
         FROM iceberg.fact_transactions
         WHERE property_type = ${propertyType}
         ORDER BY transaction_year DESC, transaction_quarter DESC
-        LIMIT 100;
+        LIMIT 5000;
       `
     } else {
       query = sql`
         SELECT *
         FROM iceberg.fact_transactions
         ORDER BY transaction_year DESC, transaction_quarter DESC
-        LIMIT 100;
+        LIMIT 5000;
       `
     }
 
